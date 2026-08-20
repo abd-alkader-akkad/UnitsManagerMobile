@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#182a4a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الوحدات">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>حسابات الوحدات</title>
+<style>
+  :root{
+    --navy:#182a4a; --navy-light:#263e66; --teal:#14a896; --teal-light:#e6f9f6;
+    --amber:#d9952e; --amber-light:#fdf4e6; --page:#f1f4f9; --border:#e0e5ec;
+    --text:#1f2630; --muted:#737e8c; --danger:#ce4c4c; --danger-light:#fceaea;
+    --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--page); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans Arabic',Tahoma,sans-serif;
+    overscroll-behavior-y:contain; -webkit-user-select:none; user-select:none;
+  }
+  input, textarea{ -webkit-user-select:text; user-select:text; }
+  #app{ max-width:520px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; position:relative; }
+
+  /* Top bar */
+  .topbar{ background:#fff; padding:calc(var(--safe-top) + 14px) 16px 12px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20; }
+  .topbar-row{ display:flex; align-items:center; gap:10px; }
+  .app-title{ font-size:20px; font-weight:700; color:var(--navy); flex:1; margin:0; }
+  .icon-btn{ width:38px; height:38px; border-radius:12px; border:1px solid var(--border); background:#fff; display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--navy); flex-shrink:0; }
+  .icon-btn:active{ background:var(--page); }
+  .searchbox{ margin-top:10px; display:flex; align-items:center; gap:8px; background:var(--page); border:1px solid var(--border); border-radius:12px; padding:9px 12px; }
+  .searchbox input{ border:none; background:transparent; outline:none; flex:1; font-size:15px; color:var(--text); font-family:inherit; }
+  .count-pill{ font-size:12px; color:var(--teal); font-weight:700; }
+
+  .backrow{ display:flex; align-items:center; gap:10px; }
+  .backrow .backbtn{ font-size:14px; font-weight:700; color:var(--navy); background:none; border:none; padding:6px 4px; display:flex; align-items:center; gap:4px; }
+  .shop-title{ font-size:17px; font-weight:700; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .shop-sub{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+
+  main{ flex:1; padding:12px 14px calc(96px + var(--safe-bottom)); }
+  #view-shop-detail{ padding-top:0; }
+
+  /* Shop list */
+  .shop-card{ background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .shop-card:active{ background:var(--teal-light); }
+  .avatar{ width:44px; height:44px; border-radius:12px; background:#e6ecf2; color:var(--navy); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:17px; flex-shrink:0; }
+  .shop-info{ flex:1; min-width:0; }
+  .shop-name{ font-weight:700; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .shop-meta{ font-size:12.5px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:8px; }
+  .badge{ font-size:11px; font-weight:700; padding:3px 8px; border-radius:8px; background:var(--danger-light); color:var(--danger); }
+  .chev{ color:var(--muted); font-size:14px; flex-shrink:0; }
+  .empty{ text-align:center; color:var(--muted); padding:60px 20px; font-size:14px; line-height:1.9; }
+  .empty .emoji{ font-size:38px; display:block; margin-bottom:10px; }
+
+  /* Stats */
+  .stats{ display:flex; gap:8px; margin-bottom:14px; }
+  .stat{ flex:1; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 10px 10px 6px; position:relative; overflow:hidden; }
+  .stat::before{ content:''; position:absolute; top:8px; bottom:8px; right:0; width:4px; border-radius:4px; background:var(--accent, var(--navy)); }
+  .stat .cap{ font-size:10.5px; color:var(--muted); font-weight:700; display:flex; align-items:center; gap:4px; margin-bottom:5px; }
+  .stat .val{ font-size:15px; font-weight:700; color:var(--accent, var(--navy)); }
+
+  /* Tabs */
+  .tabs{ display:flex; gap:8px; margin-bottom:12px; }
+  .tab{ flex:1; text-align:center; padding:9px 6px; border-radius:20px; border:1px solid var(--border); background:#fff; font-size:13px; font-weight:700; color:var(--text); }
+  .tab.active{ background:var(--navy); border-color:var(--navy); color:#fff; }
+
+  /* Transaction cards */
+  .tx-card{ background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; }
+  .tx-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .tx-date{ font-size:12.5px; color:var(--muted); }
+  .tx-company{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:8px; background:var(--page); color:var(--navy); }
+  .tx-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; text-align:center; }
+  .tx-grid div{ background:var(--page); border-radius:8px; padding:6px 2px; }
+  .tx-grid .lbl{ font-size:10px; color:var(--muted); margin-bottom:2px; }
+  .tx-grid .num{ font-size:13px; font-weight:700; }
+  .tx-status{ margin-top:8px; display:flex; justify-content:space-between; align-items:center; }
+  .status-pill{ font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:9px; }
+  .status-pill.done{ background:var(--teal-light); color:var(--teal); }
+  .status-pill.pending{ background:var(--amber-light); color:var(--amber); }
+
+  /* FAB */
+  .fab{ position:fixed; left:20px; bottom:calc(20px + var(--safe-bottom)); width:56px; height:56px; border-radius:18px; background:var(--navy); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(24,42,74,0.35); z-index:30; border:none; }
+  .fab:active{ background:var(--navy-light); }
+  .app-wrap{ max-width:520px; margin:0 auto; position:relative; }
+
+  /* Sheets */
+  #overlay{ position:fixed; inset:0; background:rgba(15,20,30,0.45); opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:40; }
+  #overlay.show{ opacity:1; pointer-events:auto; }
+  .sheet{ position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; background:#fff; border-radius:18px 18px 0 0; padding:16px 18px calc(18px + var(--safe-bottom)); transform:translateY(100%); transition:transform .25s cubic-bezier(.2,.8,.2,1); z-index:50; max-height:88vh; overflow-y:auto; }
+  .sheet.show{ transform:translateY(0); }
+  .sheet-handle{ width:38px; height:4px; background:var(--border); border-radius:3px; margin:0 auto 14px; }
+  .sheet h3{ margin:0 0 14px; font-size:17px; color:var(--navy); }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12.5px; font-weight:700; color:var(--muted); margin-bottom:6px; }
+  .field input, .field select{ width:100%; padding:12px; border:1px solid var(--border); border-radius:10px; font-size:15px; font-family:inherit; color:var(--text); background:var(--page); outline:none; }
+  .field input:focus, .field select:focus{ border-color:var(--teal); background:#fff; }
+  .row2{ display:flex; gap:10px; }
+  .row2 .field{ flex:1; }
+  .sheet-actions{ display:flex; gap:10px; margin-top:6px; }
+  .btn{ flex:1; padding:13px; border-radius:12px; border:none; font-size:14.5px; font-weight:700; font-family:inherit; }
+  .btn-primary{ background:var(--navy); color:#fff; }
+  .btn-primary:active{ background:var(--navy-light); }
+  .btn-outline{ background:#fff; border:1px solid var(--border); color:var(--text); }
+  .btn-danger{ background:var(--danger-light); color:var(--danger); }
+
+  .actionsheet-item{ display:flex; align-items:center; gap:12px; padding:14px 4px; font-size:15px; border-bottom:1px solid var(--border); }
+  .actionsheet-item:last-child{ border-bottom:none; }
+  .actionsheet-item.danger{ color:var(--danger); }
+
+  #toast{ position:fixed; bottom:calc(90px + var(--safe-bottom)); left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:11px 18px; border-radius:12px; font-size:13.5px; opacity:0; transition:all .25s ease; z-index:60; max-width:85%; text-align:center; pointer-events:none; }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== Shops list view ===== -->
+  <div id="view-shops">
+    <div class="topbar">
+      <div class="topbar-row">
+        <h1 class="app-title">🏬 حسابات الوحدات</h1>
+        <button class="icon-btn" id="menuBtn">⋮</button>
+      </div>
+      <div class="searchbox">
+        <span>🔍</span>
+        <input id="searchInput" placeholder="ابحث عن اسم المحل...">
+      </div>
+    </div>
+    <main id="shopsList"></main>
+  </div>
+
+  <!-- ===== Shop detail view ===== -->
+  <div id="view-shop-detail" hidden>
+    <div class="topbar">
+      <div class="backrow">
+        <button class="backbtn" id="backBtn">→ رجوع</button>
+      </div>
+      <div class="backrow" style="margin-top:8px;">
+        <div style="flex:1; min-width:0;">
+          <div class="shop-title" id="detailName"></div>
+          <div class="shop-sub" id="detailMeta"></div>
+        </div>
+        <button class="icon-btn" id="shopMenuBtn">⋮</button>
+      </div>
+    </div>
+    <main>
+      <div class="stats">
+        <div class="stat" style="--accent:var(--navy)">
+          <div class="cap">💰 إجمالي الدفع</div>
+          <div class="val" id="statPayment">0</div>
+        </div>
+        <div class="stat" style="--accent:var(--teal)">
+          <div class="cap">💵 المدفوع</div>
+          <div class="val" id="statPaid">0</div>
+        </div>
+        <div class="stat" style="--accent:var(--amber)">
+          <div class="cap">⏳ المتبقي</div>
+          <div class="val" id="statRemaining">0</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" id="tabActive" data-tab="active">🟢 العمليات الجارية</div>
+        <div class="tab" id="tabDone" data-tab="done">✔ العمليات المكتملة</div>
+      </div>
+      <div id="txList"></div>
+    </main>
+  </div>
+
+  <button class="fab" id="fabAdd">＋</button>
+</div>
+
+<div id="overlay"></div>
+
+<!-- Shop sheet -->
+<div class="sheet" id="sheetShop">
+  <div class="sheet-handle"></div>
+  <h3 id="shopSheetTitle">إضافة محل</h3>
+  <div class="field"><label>اسم المحل</label><input id="fShopName" placeholder="اسم المحل"></div>
+  <div class="row2">
+    <div class="field"><label>كود سيرياتيل</label><input id="fShopSyr" placeholder="كود سيرياتيل"></div>
+    <div class="field"><label>كود MTN</label><input id="fShopMtn" placeholder="كود MTN"></div>
+  </div>
+  <div class="field"><label>السعر المعتمد</label><input id="fShopPrice" type="number" inputmode="decimal" placeholder="0"></div>
+  <div class="sheet-actions">
+    <button class="btn btn-primary" id="saveShopBtn">حفظ</button>
+    <button class="btn btn-outline" id="cancelShopBtn">إلغاء</button>
+  </div>
+</div>
+
+<!-- Transaction sheet -->
+<div class="sheet" id="sheetTx">
+  <div class="sheet-handle"></div>
+  <h3 id="txSheetTitle">إضافة عملية</h3>
+  <div class="field"><label>التاريخ</label><input id="fTxDate" type="date"></div>
+  <div class="field"><label>الشركة</label>
+    <select id="fTxCompany"><option>سيرياتيل</option><option>MTN</option></select>
+  </div>
+  <div class="row2">
+    <div class="field"><label>المبلغ المحوّل</label><input id="fTxTransferred" type="number" inputmode="decimal" placeholder="0"></div>
+    <div class="field"><label>مبلغ الدفع</label><input id="fTxPayment" type="number" inputmode="decimal" placeholder="0"></div>
+  </div>
+  <div class="field"><label>المدفوع حالياً</label><input id="fTxPaid" type="number" inputmode="decimal" placeholder="0"></div>
+  <div class="sheet-actions">
+    <button class="btn btn-primary" id="saveTxBtn">حفظ</button>
+    <button class="btn btn-outline" id="cancelTxBtn">إلغاء</button>
+  </div>
+</div>
+
+<!-- Generic action sheet (menus) -->
+<div class="sheet" id="sheetActions">
+  <div class="sheet-handle"></div>
+  <div id="actionsList"></div>
+</div>
+
+<div id="toast"></div>
+
+<input type="file" id="importFile" accept="application/json" hidden>
+
+<script>
+const STORAGE_KEY = 'unitsManagerShops';
+let shops = [];
+let currentShopId = null;
+let currentTab = 'active';
+let editingShopId = null;
+let editingTxId = null;
+let actionTxId = null;
+
+function load(){
+  try{ shops = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }catch(e){ shops = []; }
+}
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(shops)); }
+function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function fmt(n){ return Math.round(Number(n)||0).toLocaleString('en-US'); }
+function remaining(t){ return Math.max(0, (Number(t.payment)||0) - (Number(t.paid)||0)); }
+function toast(msg){
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+/* ---------- Sheets ---------- */
+function openSheet(id){
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById(id).classList.add('show');
+}
+function closeSheets(){
+  document.getElementById('overlay').classList.remove('show');
+  document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show'));
+}
+document.getElementById('overlay').addEventListener('click', closeSheets);
+
+/* ---------- Shops list ---------- */
+function getShop(id){ return shops.find(s=>s.id===id); }
+
+function renderShops(){
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = document.getElementById('shopsList');
+  const filtered = shops.filter(s=>!q || s.name.toLowerCase().includes(q));
+  if(filtered.length===0){
+    list.innerHTML = `<div class="empty"><span class="emoji">🏬</span>${shops.length===0 ? 'لا يوجد محلات بعد.<br>اضغط + لإضافة أول محل.' : 'لا نتائج مطابقة للبحث.'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(s=>{
+    const rem = (s.transactions||[]).reduce((a,t)=>a+remaining(t),0);
+    const count = (s.transactions||[]).length;
+    const initial = (s.name||'?').trim().charAt(0);
+    return `<div class="shop-card" data-id="${s.id}">
+      <div class="avatar">${initial}</div>
+      <div class="shop-info">
+        <div class="shop-name">${escapeHtml(s.name)}</div>
+        <div class="shop-meta"><span>${count} عملية</span>${rem>0?`<span class="badge">متبقي ${fmt(rem)}</span>`:''}</div>
+      </div>
+      <div class="chev">‹</div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('.shop-card').forEach(el=>{
+    el.addEventListener('click', ()=>openShopDetail(el.dataset.id));
+  });
+}
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.getElementById('searchInput').addEventListener('input', renderShops);
+
+/* ---------- Shop detail ---------- */
+function openShopDetail(id){
+  currentShopId = id; currentTab = 'active';
+  document.getElementById('view-shops').hidden = true;
+  document.getElementById('view-shop-detail').hidden = false;
+  document.getElementById('tabActive').classList.add('active');
+  document.getElementById('tabDone').classList.remove('active');
+  renderShopDetail();
+}
+document.getElementById('backBtn').addEventListener('click', ()=>{
+  currentShopId = null;
+  document.getElementById('view-shop-detail').hidden = true;
+  document.getElementById('view-shops').hidden = false;
+  renderShops();
+});
+
+function renderShopDetail(){
+  const s = getShop(currentShopId);
+  if(!s) return;
+  document.getElementById('detailName').textContent = s.name;
+  let meta = `سيرياتيل: ${s.syriatel||'—'}  •  MTN: ${s.mtn||'—'}`;
+  if(s.price){ meta += `  •  السعر المعتمد: ${fmt(s.price)}`; }
+  document.getElementById('detailMeta').textContent = meta;
+
+  const txs = s.transactions||[];
+  const payment = txs.reduce((a,t)=>a+(Number(t.payment)||0),0);
+  const paid = txs.reduce((a,t)=>a+(Number(t.paid)||0),0);
+  const rem = txs.reduce((a,t)=>a+remaining(t),0);
+  document.getElementById('statPayment').textContent = fmt(payment);
+  document.getElementById('statPaid').textContent = fmt(paid);
+  document.getElementById('statRemaining').textContent = fmt(rem);
+
+  const filtered = txs.filter(t=> currentTab==='done' ? t.completed : !t.completed)
+                       .sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  const wrap = document.getElementById('txList');
+  if(filtered.length===0){
+    wrap.innerHTML = `<div class="empty"><span class="emoji">${currentTab==='done'?'✅':'🧾'}</span>${currentTab==='done' ? 'لا يوجد عمليات مكتملة بعد.' : 'لا يوجد عمليات جارية.<br>اضغط + لإضافة عملية.'}</div>`;
+    return;
+  }
+  wrap.innerHTML = filtered.map(t=>{
+    const r = remaining(t);
+    return `<div class="tx-card" data-id="${t.id}">
+      <div class="tx-top">
+        <span class="tx-date">${formatDate(t.date)}</span>
+        <span class="tx-company">${escapeHtml(t.company)}</span>
+      </div>
+      <div class="tx-grid">
+        <div><div class="lbl">المحوّل</div><div class="num">${fmt(t.transferred)}</div></div>
+        <div><div class="lbl">الدفع</div><div class="num">${fmt(t.payment)}</div></div>
+        <div><div class="lbl">المدفوع</div><div class="num">${fmt(t.paid)}</div></div>
+      </div>
+      <div class="tx-status">
+        <span class="status-pill ${t.completed?'done':'pending'}">${t.completed? '✔ خالص' : (r>0? 'متبقي '+fmt(r) : 'جاهز للإغلاق')}</span>
+        <span style="color:var(--muted); font-size:16px;">⋮</span>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.tx-card').forEach(el=>{
+    el.addEventListener('click', ()=>openTxActions(el.dataset.id));
+  });
+}
+function formatDate(d){
+  if(!d) return '';
+  const dt = new Date(d);
+  if(isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+document.getElementById('tabActive').addEventListener('click', ()=>{
+  currentTab='active';
+  document.getElementById('tabActive').classList.add('active');
+  document.getElementById('tabDone').classList.remove('active');
+  renderShopDetail();
+});
+document.getElementById('tabDone').addEventListener('click', ()=>{
+  currentTab='done';
+  document.getElementById('tabDone').classList.add('active');
+  document.getElementById('tabActive').classList.remove('active');
+  renderShopDetail();
+});
+
+/* ---------- FAB ---------- */
+document.getElementById('fabAdd').addEventListener('click', ()=>{
+  if(currentShopId===null){ openShopSheet(null); }
+  else{ openTxSheet(null); }
+});
+
+/* ---------- Shop sheet ---------- */
+function openShopSheet(id){
+  editingShopId = id;
+  const s = id ? getShop(id) : null;
+  document.getElementById('shopSheetTitle').textContent = s ? 'تعديل المحل' : 'إضافة محل';
+  document.getElementById('fShopName').value = s? s.name : '';
+  document.getElementById('fShopSyr').value = s? s.syriatel : '';
+  document.getElementById('fShopMtn').value = s? s.mtn : '';
+  document.getElementById('fShopPrice').value = s && s.price ? s.price : '';
+  openSheet('sheetShop');
+}
+document.getElementById('cancelShopBtn').addEventListener('click', closeSheets);
+document.getElementById('saveShopBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('fShopName').value.trim();
+  if(!name){ toast('اكتب اسم المحل'); return; }
+  const syr = document.getElementById('fShopSyr').value.trim();
+  const mtn = document.getElementById('fShopMtn').value.trim();
+  const price = Number(document.getElementById('fShopPrice').value)||0;
+  if(editingShopId){
+    const s = getShop(editingShopId);
+    s.name=name; s.syriatel=syr; s.mtn=mtn; s.price=price;
+  } else {
+    shops.push({ id:newId(), name, syriatel:syr, mtn, price, transactions:[] });
+  }
+  save(); closeSheets();
+  if(currentShopId){ renderShopDetail(); } else { renderShops(); }
+  toast('تم الحفظ');
+});
+
+/* ---------- Transaction sheet ---------- */
+function openTxSheet(id){
+  editingTxId = id;
+  const s = getShop(currentShopId);
+  const t = id ? s.transactions.find(x=>x.id===id) : null;
+  document.getElementById('txSheetTitle').textContent = t ? 'تعديل العملية' : 'إضافة عملية';
+  document.getElementById('fTxDate').value = t ? t.date : new Date().toISOString().slice(0,10);
+  document.getElementById('fTxCompany').value = t ? t.company : 'سيرياتيل';
+  document.getElementById('fTxTransferred').value = t ? t.transferred : '';
+  document.getElementById('fTxPayment').value = t ? t.payment : '';
+  document.getElementById('fTxPaid').value = t ? t.paid : '';
+  openSheet('sheetTx');
+}
+document.getElementById('cancelTxBtn').addEventListener('click', closeSheets);
+document.getElementById('saveTxBtn').addEventListener('click', ()=>{
+  const s = getShop(currentShopId); if(!s) return;
+  const date = document.getElementById('fTxDate').value || new Date().toISOString().slice(0,10);
+  const company = document.getElementById('fTxCompany').value;
+  const transferred = Number(document.getElementById('fTxTransferred').value)||0;
+  const payment = Number(document.getElementById('fTxPayment').value)||0;
+  const paid = Number(document.getElementById('fTxPaid').value)||0;
+  if(editingTxId){
+    const t = s.transactions.find(x=>x.id===editingTxId);
+    Object.assign(t, { date, company, transferred, payment, paid });
+  } else {
+    s.transactions.push({ id:newId(), date, company, transferred, payment, paid, completed:false });
+  }
+  save(); closeSheets(); renderShopDetail();
+  toast('تم الحفظ');
+});
+
+/* ---------- Transaction quick actions ---------- */
+function openTxActions(id){
+  actionTxId = id;
+  const s = getShop(currentShopId);
+  const t = s.transactions.find(x=>x.id===id);
+  const canComplete = !t.completed && remaining(t)===0;
+  const items = [];
+  items.push(`<div class="actionsheet-item" data-act="edit">✏️ تعديل العملية</div>`);
+  if(!t.completed){
+    items.push(`<div class="actionsheet-item" data-act="complete" ${canComplete?'':'style="color:var(--muted)"'}>${canComplete? '✅ تم دفع العملية' : '✅ تم دفع العملية (بعد سداد كامل المبلغ)'}</div>`);
+  }
+  items.push(`<div class="actionsheet-item danger" data-act="delete">🗑 حذف العملية</div>`);
+  items.push(`<div class="actionsheet-item" data-act="cancel">إلغاء</div>`);
+  document.getElementById('actionsList').innerHTML = items.join('');
+  document.querySelectorAll('#actionsList .actionsheet-item').forEach(el=>{
+    el.addEventListener('click', ()=>handleTxAction(el.dataset.act));
+  });
+  openSheet('sheetActions');
+}
+function handleTxAction(act){
+  const s = getShop(currentShopId);
+  const t = s.transactions.find(x=>x.id===actionTxId);
+  if(act==='edit'){ closeSheets(); openTxSheet(actionTxId); }
+  else if(act==='complete'){
+    if(remaining(t)!==0){ closeSheets(); toast('لا يمكن اعتبار العملية خالصة قبل دفع كامل المبلغ'); return; }
+    t.completed = true; save(); closeSheets(); renderShopDetail(); toast('تم تحديد العملية كخالصة');
+  }
+  else if(act==='delete'){
+    closeSheets();
+    if(confirm('هل أنت متأكد من حذف هذه العملية؟')){
+      s.transactions = s.transactions.filter(x=>x.id!==actionTxId);
+      save(); renderShopDetail(); toast('تم الحذف');
+    }
+  }
+  else { closeSheets(); }
+}
+
+/* ---------- Shop menu (edit / delete) ---------- */
+document.getElementById('shopMenuBtn').addEventListener('click', ()=>{
+  const items = [
+    `<div class="actionsheet-item" data-act="editShop">✏️ تعديل بيانات المحل</div>`,
+    `<div class="actionsheet-item danger" data-act="deleteShop">🗑 حذف المحل</div>`,
+    `<div class="actionsheet-item" data-act="cancel">إلغاء</div>`
+  ];
+  document.getElementById('actionsList').innerHTML = items.join('');
+  document.querySelectorAll('#actionsList .actionsheet-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const act = el.dataset.act;
+      if(act==='editShop'){ closeSheets(); openShopSheet(currentShopId); }
+      else if(act==='deleteShop'){
+        closeSheets();
+        if(confirm('هل أنت متأكد من حذف هذا المحل؟ سيتم حذف جميع عملياته أيضاً.')){
+          shops = shops.filter(s=>s.id!==currentShopId);
+          save();
+          currentShopId = null;
+          document.getElementById('view-shop-detail').hidden = true;
+          document.getElementById('view-shops').hidden = false;
+          renderShops(); toast('تم حذف المحل');
+        }
+      } else { closeSheets(); }
+    });
+  });
+  openSheet('sheetActions');
+});
+
+/* ---------- Top menu (backup / import) ---------- */
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  const items = [
+    `<div class="actionsheet-item" data-act="export">⤓ تصدير نسخة احتياطية</div>`,
+    `<div class="actionsheet-item" data-act="import">⤒ استيراد نسخة احتياطية</div>`,
+    `<div class="actionsheet-item" data-act="cancel">إلغاء</div>`
+  ];
+  document.getElementById('actionsList').innerHTML = items.join('');
+  document.querySelectorAll('#actionsList .actionsheet-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const act = el.dataset.act;
+      closeSheets();
+      if(act==='export') exportBackup();
+      else if(act==='import') document.getElementById('importFile').click();
+    });
+  });
+  openSheet('sheetActions');
+});
+function exportBackup(){
+  const blob = new Blob([JSON.stringify(shops, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
+  a.href = url; a.download = `UnitsBackup_${stamp}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('تم تصدير النسخة الاحتياطية');
+}
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data)) throw new Error('bad');
+      if(confirm('سيتم استبدال جميع البيانات الحالية بالنسخة المستوردة. متابعة؟')){
+        shops = data; save(); renderShops(); toast('تم الاستيراد بنجاح');
+      }
+    }catch(err){ toast('الملف غير صالح'); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+/* ---------- Service worker ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+  });
+}
+
+/* ---------- Init ---------- */
+load();
+renderShops();
+</script>
+</body>
+</html>
