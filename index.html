@@ -86,9 +86,15 @@
   .status-pill.pending{ background:var(--amber-light); color:var(--amber); }
 
   /* FAB */
-  .fab{ position:fixed; left:20px; bottom:calc(20px + var(--safe-bottom)); width:56px; height:56px; border-radius:18px; background:var(--navy); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(24,42,74,0.35); z-index:30; border:none; }
+  .fab{ position:fixed; left:20px; bottom:calc(84px + var(--safe-bottom)); width:56px; height:56px; border-radius:18px; background:var(--navy); color:#fff; font-size:26px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(24,42,74,0.35); z-index:30; border:none; }
   .fab:active{ background:var(--navy-light); }
   .app-wrap{ max-width:520px; margin:0 auto; position:relative; }
+
+  /* Bottom tab bar */
+  .bottombar{ position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; background:#fff; border-top:1px solid var(--border); display:flex; padding-bottom:var(--safe-bottom); z-index:25; }
+  .bottombar-item{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:10px 4px 8px; color:var(--muted); font-size:11.5px; font-weight:700; border:none; background:none; }
+  .bottombar-item .bi-icon{ font-size:20px; }
+  .bottombar-item.active{ color:var(--navy); }
 
   /* Sheets */
   #overlay{ position:fixed; inset:0; background:rgba(15,20,30,0.45); opacity:0; pointer-events:none; transition:opacity .2s ease; z-index:40; }
@@ -116,6 +122,13 @@
 
   #toast{ position:fixed; bottom:calc(90px + var(--safe-bottom)); left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff; padding:11px 18px; border-radius:12px; font-size:13.5px; opacity:0; transition:all .25s ease; z-index:60; max-width:85%; text-align:center; pointer-events:none; }
   #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Agent payments */
+  .pay-card{ background:#fff; border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .pay-info{ flex:1; min-width:0; }
+  .pay-amount{ font-weight:700; font-size:15px; color:var(--navy); }
+  .pay-date{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .pay-note{ font-size:12px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   [hidden]{ display:none !important; }
 </style>
@@ -175,7 +188,43 @@
     </main>
   </div>
 
+  <!-- ===== Agent account view ===== -->
+  <div id="view-agent" hidden>
+    <div class="topbar">
+      <div class="topbar-row">
+        <h1 class="app-title">🧾 حساب الوكيل</h1>
+      </div>
+      <div class="shop-sub" style="margin-top:4px;">عدّل السعر العام لحساب الوكيل، ويمكنك تغييره بأي وقت</div>
+      <div style="display:flex;gap:8px;align-items:end;margin-top:10px;">
+        <div class="field" style="flex:1;margin:0;"><label for="agentRateInput">السعر العام للوكيل لكل 1000 وحدة</label><input id="agentRateInput" type="number" inputmode="decimal" min="0" step="any" placeholder="1560"></div>
+        <button class="btn btn-primary" id="saveAgentRateBtn" style="flex:0 0 auto;padding:12px 16px;">حفظ السعر</button>
+      </div>
+    </div>
+    <main>
+      <div class="stats">
+        <div class="stat" id="agentDueCard" role="button" tabindex="0" title="اضغط لتعديل إجمالي المستحق" style="--accent:var(--navy);cursor:pointer;position:relative;">
+          <div class="cap">📦 المستحق للوكيل <span style="font-size:12px;opacity:.75">✏️ تعديل</span></div>
+          <div class="val" id="agentDue">0</div>
+        </div>
+        <div class="stat" style="--accent:var(--teal)">
+          <div class="cap">💵 المدفوع له</div>
+          <div class="val" id="agentPaid">0</div>
+        </div>
+        <div class="stat" style="--accent:var(--amber)">
+          <div class="cap">⏳ المتبقي له</div>
+          <div class="val" id="agentRemaining">0</div>
+        </div>
+      </div>
+      <div id="agentPaymentsList"></div>
+    </main>
+  </div>
+
   <button class="fab" id="fabAdd">＋</button>
+
+  <div class="bottombar">
+    <button class="bottombar-item active" id="navShops"><span class="bi-icon">🏬</span>محلات</button>
+    <button class="bottombar-item" id="navAgent"><span class="bi-icon">🧾</span>حساب الوكيل</button>
+  </div>
 </div>
 
 <div id="overlay"></div>
@@ -215,6 +264,19 @@
   </div>
 </div>
 
+<!-- Agent payment sheet -->
+<div class="sheet" id="sheetAgentPay">
+  <div class="sheet-handle"></div>
+  <h3 id="agentPaySheetTitle">تسجيل دفعة للوكيل</h3>
+  <div class="field"><label>التاريخ</label><input id="fAgentDate" type="date"></div>
+  <div class="field"><label>المبلغ المدفوع</label><input id="fAgentAmount" type="number" inputmode="decimal" placeholder="0"></div>
+  <div class="field"><label>ملاحظة (اختياري)</label><input id="fAgentNote" placeholder="ملاحظة"></div>
+  <div class="sheet-actions">
+    <button class="btn btn-primary" id="saveAgentPayBtn">حفظ</button>
+    <button class="btn btn-outline" id="cancelAgentPayBtn">إلغاء</button>
+  </div>
+</div>
+
 <!-- Generic action sheet (menus) -->
 <div class="sheet" id="sheetActions">
   <div class="sheet-handle"></div>
@@ -227,17 +289,68 @@
 
 <script>
 const STORAGE_KEY = 'unitsManagerShops';
+const AGENT_KEY = 'unitsManagerAgentPayments';
+const AGENT_RATE_KEY = 'unitsManagerAgentRate';
+const AGENT_DUE_ADJUSTMENT_KEY = 'unitsManagerAgentDueAdjustment';
+let agentDueAdjustment = 0;
+let agentRatePerThousand = 1560;
+
 let shops = [];
+let agentPayments = [];
 let currentShopId = null;
+let currentView = 'shops'; // 'shops' | 'shopDetail' | 'agent'
 let currentTab = 'active';
 let editingShopId = null;
 let editingTxId = null;
 let actionTxId = null;
+let editingAgentPayId = null;
+let actionAgentPayId = null;
 
 function load(){
   try{ shops = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }catch(e){ shops = []; }
 }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(shops)); }
+
+function loadAgentPayments(){
+  try{ agentPayments = JSON.parse(localStorage.getItem(AGENT_KEY) || '[]'); }catch(e){ agentPayments = []; }
+}
+function saveAgentPayments(){ localStorage.setItem(AGENT_KEY, JSON.stringify(agentPayments)); }
+function loadAgentDueAdjustment(){
+  const n = Number(localStorage.getItem(AGENT_DUE_ADJUSTMENT_KEY) || 0);
+  agentDueAdjustment = Number.isFinite(n) ? n : 0;
+}
+function editAgentDue(){
+  let calculated = 0;
+  shops.forEach(s => (s.transactions||[]).forEach(t => calculated += agentDueFor(t)));
+  const current = calculated + agentDueAdjustment;
+  const entered = prompt('عدّل إجمالي المستحق للوكيل:', String(Math.round(current)));
+  if(entered === null) return;
+  const desired = Number(entered.trim());
+  if(entered.trim() === '' || !Number.isFinite(desired) || desired < 0){ toast('أدخل مبلغاً صحيحاً'); return; }
+  agentDueAdjustment = desired - calculated;
+  localStorage.setItem(AGENT_DUE_ADJUSTMENT_KEY, String(agentDueAdjustment));
+  renderAgentView();
+  toast('تم تعديل إجمالي المستحق للوكيل');
+}
+const agentDueCard = document.getElementById('agentDueCard');
+agentDueCard.addEventListener('click', editAgentDue);
+agentDueCard.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); editAgentDue(); } });
+function loadAgentRate(){
+  const saved = localStorage.getItem(AGENT_RATE_KEY);
+  const n = saved === null ? 1560 : Number(saved);
+  agentRatePerThousand = Number.isFinite(n) && n >= 0 ? n : 1560;
+}
+function saveAgentRate(){
+  const input = document.getElementById('agentRateInput');
+  const n = Number(input.value);
+  if(input.value.trim()==='' || !Number.isFinite(n) || n < 0){ toast('أدخل سعراً صحيحاً'); return; }
+  agentRatePerThousand = n;
+  localStorage.setItem(AGENT_RATE_KEY, String(n));
+  renderAgentView();
+  toast('تم حفظ سعر المستحق للوكيل');
+}
+document.getElementById('saveAgentRateBtn').addEventListener('click', saveAgentRate);
+
 function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function fmt(n){ return Math.round(Number(n)||0).toLocaleString('en-US'); }
 function remaining(t){ return Math.max(0, (Number(t.payment)||0) - (Number(t.paid)||0)); }
@@ -256,6 +369,25 @@ function closeSheets(){
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show'));
 }
 document.getElementById('overlay').addEventListener('click', closeSheets);
+
+/* ---------- Bottom navigation ---------- */
+function showView(view){
+  currentView = view;
+  document.getElementById('view-shops').hidden = view!=='shops';
+  document.getElementById('view-shop-detail').hidden = view!=='shopDetail';
+  document.getElementById('view-agent').hidden = view!=='agent';
+  document.getElementById('navShops').classList.toggle('active', view==='shops' || view==='shopDetail');
+  document.getElementById('navAgent').classList.toggle('active', view==='agent');
+}
+document.getElementById('navShops').addEventListener('click', ()=>{
+  currentShopId = null;
+  showView('shops');
+  renderShops();
+});
+document.getElementById('navAgent').addEventListener('click', ()=>{
+  showView('agent');
+  renderAgentView();
+});
 
 /* ---------- Shops list ---------- */
 function getShop(id){ return shops.find(s=>s.id===id); }
@@ -292,16 +424,14 @@ document.getElementById('searchInput').addEventListener('input', renderShops);
 /* ---------- Shop detail ---------- */
 function openShopDetail(id){
   currentShopId = id; currentTab = 'active';
-  document.getElementById('view-shops').hidden = true;
-  document.getElementById('view-shop-detail').hidden = false;
+  showView('shopDetail');
   document.getElementById('tabActive').classList.add('active');
   document.getElementById('tabDone').classList.remove('active');
   renderShopDetail();
 }
 document.getElementById('backBtn').addEventListener('click', ()=>{
   currentShopId = null;
-  document.getElementById('view-shop-detail').hidden = true;
-  document.getElementById('view-shops').hidden = false;
+  showView('shops');
   renderShops();
 });
 
@@ -372,8 +502,9 @@ document.getElementById('tabDone').addEventListener('click', ()=>{
 
 /* ---------- FAB ---------- */
 document.getElementById('fabAdd').addEventListener('click', ()=>{
-  if(currentShopId===null){ openShopSheet(null); }
-  else{ openTxSheet(null); }
+  if(currentView==='agent'){ openAgentPaySheet(null); }
+  else if(currentView==='shopDetail'){ openTxSheet(null); }
+  else{ openShopSheet(null); }
 });
 
 /* ---------- Shop sheet ---------- */
@@ -491,8 +622,7 @@ document.getElementById('shopMenuBtn').addEventListener('click', ()=>{
           shops = shops.filter(s=>s.id!==currentShopId);
           save();
           currentShopId = null;
-          document.getElementById('view-shop-detail').hidden = true;
-          document.getElementById('view-shops').hidden = false;
+          showView('shops');
           renderShops(); toast('تم حذف المحل');
         }
       } else { closeSheets(); }
@@ -500,6 +630,90 @@ document.getElementById('shopMenuBtn').addEventListener('click', ()=>{
   });
   openSheet('sheetActions');
 });
+
+/* ---------- Agent account view ---------- */
+function agentDueFor(t){ return ((Number(t.transferred)||0) / 1000) * agentRatePerThousand; }
+
+function renderAgentView(){
+  document.getElementById('agentRateInput').value = agentRatePerThousand;
+  let due = 0;
+  shops.forEach(s=> (s.transactions||[]).forEach(t=> due += agentDueFor(t)));
+  const paid = agentPayments.reduce((a,p)=>a+(Number(p.amount)||0),0);
+  due += agentDueAdjustment;
+  const rem = Math.max(0, due - paid);
+  document.getElementById('agentDue').textContent = fmt(due);
+  document.getElementById('agentPaid').textContent = fmt(paid);
+  document.getElementById('agentRemaining').textContent = fmt(rem);
+
+  const wrap = document.getElementById('agentPaymentsList');
+  const sorted = [...agentPayments].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+  if(sorted.length===0){
+    wrap.innerHTML = `<div class="empty"><span class="emoji">🧾</span>لا يوجد دفعات مسجّلة للوكيل بعد.<br>اضغط + لتسجيل أول دفعة.</div>`;
+    return;
+  }
+  wrap.innerHTML = sorted.map(p=>`
+    <div class="pay-card" data-id="${p.id}">
+      <div class="avatar">💵</div>
+      <div class="pay-info">
+        <div class="pay-amount">${fmt(p.amount)}</div>
+        <div class="pay-date">${formatDate(p.date)}</div>
+        ${p.note ? `<div class="pay-note">${escapeHtml(p.note)}</div>` : ''}
+      </div>
+      <span style="color:var(--muted); font-size:16px;">⋮</span>
+    </div>`).join('');
+  wrap.querySelectorAll('.pay-card').forEach(el=>{
+    el.addEventListener('click', ()=>openAgentPayActions(el.dataset.id));
+  });
+}
+
+function openAgentPaySheet(id){
+  editingAgentPayId = id;
+  const p = id ? agentPayments.find(x=>x.id===id) : null;
+  document.getElementById('agentPaySheetTitle').textContent = p ? 'تعديل الدفعة' : 'تسجيل دفعة للوكيل';
+  document.getElementById('fAgentDate').value = p ? p.date : new Date().toISOString().slice(0,10);
+  document.getElementById('fAgentAmount').value = p ? p.amount : '';
+  document.getElementById('fAgentNote').value = p ? (p.note||'') : '';
+  openSheet('sheetAgentPay');
+}
+document.getElementById('cancelAgentPayBtn').addEventListener('click', closeSheets);
+document.getElementById('saveAgentPayBtn').addEventListener('click', ()=>{
+  const date = document.getElementById('fAgentDate').value || new Date().toISOString().slice(0,10);
+  const amount = Number(document.getElementById('fAgentAmount').value)||0;
+  const note = document.getElementById('fAgentNote').value.trim();
+  if(amount<=0){ toast('اكتب مبلغ الدفعة'); return; }
+  if(editingAgentPayId){
+    const p = agentPayments.find(x=>x.id===editingAgentPayId);
+    Object.assign(p, { date, amount, note });
+  } else {
+    agentPayments.push({ id:newId(), date, amount, note });
+  }
+  saveAgentPayments(); closeSheets(); renderAgentView();
+  toast('تم الحفظ');
+});
+
+function openAgentPayActions(id){
+  actionAgentPayId = id;
+  const items = [
+    `<div class="actionsheet-item" data-act="editPay">✏️ تعديل الدفعة</div>`,
+    `<div class="actionsheet-item danger" data-act="deletePay">🗑 حذف الدفعة</div>`,
+    `<div class="actionsheet-item" data-act="cancel">إلغاء</div>`
+  ];
+  document.getElementById('actionsList').innerHTML = items.join('');
+  document.querySelectorAll('#actionsList .actionsheet-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const act = el.dataset.act;
+      if(act==='editPay'){ closeSheets(); openAgentPaySheet(actionAgentPayId); }
+      else if(act==='deletePay'){
+        closeSheets();
+        if(confirm('هل أنت متأكد من حذف هذه الدفعة؟')){
+          agentPayments = agentPayments.filter(x=>x.id!==actionAgentPayId);
+          saveAgentPayments(); renderAgentView(); toast('تم الحذف');
+        }
+      } else { closeSheets(); }
+    });
+  });
+  openSheet('sheetActions');
+}
 
 /* ---------- Top menu (backup / import) ---------- */
 document.getElementById('menuBtn').addEventListener('click', ()=>{
@@ -520,7 +734,7 @@ document.getElementById('menuBtn').addEventListener('click', ()=>{
   openSheet('sheetActions');
 });
 function exportBackup(){
-  const blob = new Blob([JSON.stringify(shops, null, 2)], { type:'application/json' });
+  const blob = new Blob([JSON.stringify({ shops, agentPayments }, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
@@ -535,9 +749,15 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
   reader.onload = ()=>{
     try{
       const data = JSON.parse(reader.result);
-      if(!Array.isArray(data)) throw new Error('bad');
+      let newShops, newAgentPayments;
+      if(Array.isArray(data)){ newShops = data; newAgentPayments = []; }
+      else if(data && Array.isArray(data.shops)){ newShops = data.shops; newAgentPayments = Array.isArray(data.agentPayments) ? data.agentPayments : []; }
+      else throw new Error('bad');
       if(confirm('سيتم استبدال جميع البيانات الحالية بالنسخة المستوردة. متابعة؟')){
-        shops = data; save(); renderShops(); toast('تم الاستيراد بنجاح');
+        shops = newShops; agentPayments = newAgentPayments;
+        save(); saveAgentPayments();
+        renderShops(); renderAgentView();
+        toast('تم الاستيراد بنجاح');
       }
     }catch(err){ toast('الملف غير صالح'); }
     e.target.value = '';
@@ -554,6 +774,9 @@ if('serviceWorker' in navigator){
 
 /* ---------- Init ---------- */
 load();
+loadAgentPayments();
+loadAgentDueAdjustment();
+loadAgentRate();
 renderShops();
 </script>
 </body>
